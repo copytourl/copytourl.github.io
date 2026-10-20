@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'none'; base-uri 'none'; form-action 'none'">
+<title>copytourl</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f4f7fb;color:#24354a;font:14px/1.6 system-ui,sans-serif}
+main{max-width:760px;margin:24px auto;padding:0 14px}
+section{padding:14px;background:#fff;border:1px solid #dde4eb;border-radius:8px}
+header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+h1{margin:0;font-size:18px}label{display:block;margin-bottom:6px}
+textarea{display:block;width:100%;resize:vertical;border:1px solid #cbd6e2;border-radius:5px;padding:10px;font:14px/1.6 system-ui,sans-serif;color:inherit;background:#fff}
+textarea:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid #2463b7;outline-offset:2px}
+button,a.button{display:inline-flex;align-items:center;justify-content:center;height:28px;padding:3px 8px;border:1px solid #ccd8e5;border-radius:5px;background:#f5f8fc;color:#235fae;font:12px/20px system-ui,sans-serif;text-decoration:none;cursor:pointer;white-space:nowrap}
+.primary{background:#2463b7;color:#fff;border-color:#2463b7}
+.tools{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:8px}
+small{font-size:12px;color:#65768a}
+#result{margin-top:14px}#link{font-size:12px}
+#received{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font:16px/1.7 system-ui,sans-serif}
+.error{color:#a12d3e;margin:10px 0 0;font-size:13px}
+#copy-status{font-size:12px;color:#65768a}#copy-status:empty{display:none}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+<section id="composer">
+<header><h1>copytourl</h1><a id="download-html" class="button" download="copytourl.html">HTML 받기</a></header>
+<form id="form">
+<label for="text">공유할 텍스트</label>
+<textarea id="text" rows="10" placeholder="텍스트를 입력하세요." spellcheck="false"></textarea>
+<div class="tools"><button id="make-link" class="primary" type="submit">링크 만들기</button><small>링크를 가진 사람은 내용을 볼 수 있어요.</small></div>
+<p id="form-error" class="error" role="alert" hidden></p>
+</form>
+<div id="result" hidden>
+<label for="link">공유 링크</label>
+<textarea id="link" rows="3" readonly spellcheck="false"></textarea>
+<div class="tools"><button id="copy-link" class="primary" type="button">링크 복사</button><a id="preview" class="button">열어보기</a><small id="link-size" role="status"></small></div>
+<small id="length-note" hidden>긴 링크는 메신저에서 잘릴 수 있어요. 받은 링크가 끝까지 전달됐는지 확인해 주세요.</small>
+</div>
+</section>
+<section id="viewer" hidden>
+<header><h1>copytourl</h1><button id="copy-text" class="primary" type="button">복사</button></header>
+<pre id="received"></pre>
+<small id="legacy-note" hidden>이전 형식의 링크예요. 사이트가 종료되어도 원문을 복원할 수 있어요.</small>
+</section>
+<section id="invalid" hidden>
+<p id="invalid-message" class="error" role="alert"></p>
+<div class="tools"><a class="button" href="./">새 링크 만들기</a></div>
+</section>
+<p id="copy-status" role="status" aria-live="polite"></p>
+<p id="loading" role="status" hidden>여는 중…</p>
+</main>
+<script id="compression-library">
+/*! fflate 0.8.3 — https://github.com/101arrowz/fflate
+MIT License
+
+Copyright (c) 2026 Arjun Barrett
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+*/
+var CopytourlCompression=(()=>{var vr=Object.defineProperty;var Lr=Object.getOwnPropertyDescriptor;var Pr=Object.getOwnPropertyNames;var $r=Object.prototype.hasOwnProperty;var Hr=(n,r)=>{for(var t in r)vr(n,t,{get:r[t],enumerable:!0})},Nr=(n,r,t,e)=>{if(r&&typeof r=="object"||typeof r=="function")for(let i of Pr(r))!$r.call(n,i)&&i!==t&&vr(n,i,{get:()=>r[i],enumerable:!(e=Lr(r,i))||e.enumerable});return n};var Rr=n=>Nr(vr({},"__esModule",{value:!0}),n);var tn={};Hr(tn,{Unzlib:()=>qr,zlibSync:()=>Or});var A=Uint8Array,N=Uint16Array,Ar=Int32Array,hr=new A([0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5,0,0,0,0]),ur=new A([0,0,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,12,13,13,0,0]),wr=new A([16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,14,1,15]),Dr=function(n,r){for(var t=new N(31),e=0;e<31;++e)t[e]=r+=1<<n[e-1];for(var i=new Ar(t[30]),e=1;e<30;++e)for(var a=t[e];a<t[e+1];++a)i[a]=a-t[e]<<5|e;return{b:t,r:i}},Tr=Dr(hr,2),Cr=Tr.b,mr=Tr.r;Cr[28]=258,mr[258]=28;var Ir=Dr(ur,0),Vr=Ir.b,Sr=Ir.r,xr=new N(32768);for(l=0;l<32768;++l)K=(l&43690)>>1|(l&21845)<<1,K=(K&52428)>>2|(K&13107)<<2,K=(K&61680)>>4|(K&3855)<<4,xr[l]=((K&65280)>>8|(K&255)<<8)>>1;var K,l,j=(function(n,r,t){for(var e=n.length,i=0,a=new N(r);i<e;++i)n[i]&&++a[n[i]-1];var f=new N(r);for(i=1;i<r;++i)f[i]=f[i-1]+a[i-1]<<1;var c;if(t){c=new N(1<<r);var p=15-r;for(i=0;i<e;++i)if(n[i])for(var x=i<<4|n[i],o=r-n[i],s=f[n[i]-1]++<<o,u=s|(1<<o)-1;s<=u;++s)c[xr[s]>>p]=x}else for(c=new N(e),i=0;i<e;++i)n[i]&&(c[i]=xr[f[n[i]-1]++]>>15-n[i]);return c}),k=new A(288);for(l=0;l<144;++l)k[l]=8;var l;for(l=144;l<256;++l)k[l]=9;var l;for(l=256;l<280;++l)k[l]=7;var l;for(l=280;l<288;++l)k[l]=8;var l,or=new A(32);for(l=0;l<32;++l)or[l]=5;var l,Wr=j(k,9,0),Yr=j(k,9,1),jr=j(or,5,0),Jr=j(or,5,1),cr=function(n){for(var r=n[0],t=1;t<n.length;++t)n[t]>r&&(r=n[t]);return r},W=function(n,r,t){var e=r/8|0;return(n[e]|n[e+1]<<8)>>(r&7)&t},pr=function(n,r){var t=r/8|0;return(n[t]|n[t+1]<<8|n[t+2]<<16)>>(r&7)},Mr=function(n){return(n+7)/8|0},ar=function(n,r,t){return(r==null||r<0)&&(r=0),(t==null||t>n.length)&&(t=n.length),new A(n.subarray(r,t))};var Kr=["unexpected EOF","invalid block type","invalid length/literal","invalid distance","stream finished","no stream handler",,"no callback","invalid UTF-8 data","extra field too long","date not in range 1980-2099","filename too long","stream finishing","invalid zip data"],q=function(n,r,t){var e=new Error(r||Kr[n]);if(e.code=n,Error.captureStackTrace&&Error.captureStackTrace(e,q),!t)throw e;return e},Qr=function(n,r,t,e){var i=n.length,a=e?e.length:0;if(!i||r.f&&!r.l)return t||new A(0);var f=!t,c=f||r.i!=2,p=r.i;f&&(t=new A(i*3));var x=function(nr){var tr=t.length;if(nr>tr){var _=new A(Math.max(tr*2,nr));_.set(t),t=_}},o=r.f||0,s=r.p||0,u=r.b||0,g=r.l,T=r.d,y=r.m,E=r.n,V=i*8;do{if(!g){o=W(n,s,1);var L=W(n,s+1,3);if(s+=3,L)if(L==1)g=Yr,T=Jr,y=9,E=5;else if(L==2){var Z=W(n,s,31)+257,S=W(n,s+10,15)+4,v=Z+W(n,s+5,31)+1;s+=14;for(var h=new A(v),U=new A(19),z=0;z<S;++z)U[wr[z]]=W(n,s+z*3,7);s+=S*3;for(var I=cr(U),X=(1<<I)-1,P=j(U,I,1),z=0;z<v;){var G=P[W(n,s,X)];s+=G&15;var M=G>>4;if(M<16)h[z++]=M;else{var F=0,w=0;for(M==16?(w=3+W(n,s,3),s+=2,F=h[z-1]):M==17?(w=3+W(n,s,7),s+=3):M==18&&(w=11+W(n,s,127),s+=7);w--;)h[z++]=F}}var O=h.subarray(0,Z),D=h.subarray(Z);y=cr(O),E=cr(D),g=j(O,y,1),T=j(D,E,1)}else q(1);else{var M=Mr(s)+4,B=n[M-4]|n[M-3]<<8,C=M+B;if(C>i){p&&q(0);break}c&&x(u+B),t.set(n.subarray(M,C),u),r.b=u+=B,r.p=s=C*8,r.f=o;continue}if(s>V){p&&q(0);break}}c&&x(u+131072);for(var rr=(1<<y)-1,R=(1<<E)-1,J=s;;J=s){var F=g[pr(n,s)&rr],$=F>>4;if(s+=F&15,s>V){p&&q(0);break}if(F||q(2),$<256)t[u++]=$;else if($==256){J=s,g=null;break}else{var H=$-254;if($>264){var z=$-257,m=hr[z];H=W(n,s,(1<<m)-1)+Cr[z],s+=m}var Y=T[pr(n,s)&R],d=Y>>4;Y||q(3),s+=Y&15;var D=Vr[d];if(d>3){var m=ur[d];D+=pr(n,s)&(1<<m)-1,s+=m}if(s>V){p&&q(0);break}c&&x(u+131072);var b=u+H;if(u<D){var sr=a-D,fr=Math.min(D,b);for(sr+u<0&&q(3);u<fr;++u)t[u]=e[sr+u]}for(;u<b;++u)t[u]=t[u-D]}}r.l=g,r.p=J,r.b=u,r.f=o,g&&(o=1,r.m=y,r.d=T,r.n=E)}while(!o);return u!=t.length&&f?ar(t,0,u):t.subarray(0,u)},Q=function(n,r,t){t<<=r&7;var e=r/8|0;n[e]|=t,n[e+1]|=t>>8},er=function(n,r,t){t<<=r&7;var e=r/8|0;n[e]|=t,n[e+1]|=t>>8,n[e+2]|=t>>16},gr=function(n,r){for(var t=[],e=0;e<n.length;++e)n[e]&&t.push({s:e,f:n[e]});var i=t.length,a=t.slice();if(!i)return{t:Zr,l:0};if(i==1){var f=new A(t[0].s+1);return f[t[0].s]=1,{t:f,l:1}}t.sort(function(C,Z){return C.f-Z.f}),t.push({s:-1,f:25001});var c=t[0],p=t[1],x=0,o=1,s=2;for(t[0]={s:-1,f:c.f+p.f,l:c,r:p};o!=i-1;)c=t[t[x].f<t[s].f?x++:s++],p=t[x!=o&&t[x].f<t[s].f?x++:s++],t[o++]={s:-1,f:c.f+p.f,l:c,r:p};for(var u=a[0].s,e=1;e<i;++e)a[e].s>u&&(u=a[e].s);var g=new N(u+1),T=zr(t[o-1],g,0);if(T>r){var e=0,y=0,E=T-r,V=1<<E;for(a.sort(function(Z,S){return g[S.s]-g[Z.s]||Z.f-S.f});e<i;++e){var L=a[e].s;if(g[L]>r)y+=V-(1<<T-g[L]),g[L]=r;else break}for(y>>=E;y>0;){var M=a[e].s;g[M]<r?y-=1<<r-g[M]++-1:++e}for(;e>=0&&y;--e){var B=a[e].s;g[B]==r&&(--g[B],++y)}T=r}return{t:new A(g),l:T}},zr=function(n,r,t){return n.s==-1?Math.max(zr(n.l,r,t+1),zr(n.r,r,t+1)):r[n.s]=t},Ur=function(n){for(var r=n.length;r&&!n[--r];);for(var t=new N(++r),e=0,i=n[0],a=1,f=function(p){t[e++]=p},c=1;c<=r;++c)if(n[c]==i&&c!=r)++a;else{if(!i&&a>2){for(;a>138;a-=138)f(32754);a>2&&(f(a>10?a-11<<5|28690:a-3<<5|12305),a=0)}else if(a>3){for(f(i),--a;a>6;a-=6)f(8304);a>2&&(f(a-3<<5|8208),a=0)}for(;a--;)f(i);a=1,i=n[c]}return{c:t.subarray(0,e),n:r}},ir=function(n,r){for(var t=0,e=0;e<r.length;++e)t+=n[e]*r[e];return t},Br=function(n,r,t){var e=t.length,i=Mr(r+2);n[i]=e&255,n[i+1]=e>>8,n[i+2]=n[i]^255,n[i+3]=n[i+1]^255;for(var a=0;a<e;++a)n[i+a+4]=t[a];return(i+4+e)*8},Fr=function(n,r,t,e,i,a,f,c,p,x,o){Q(r,o++,t),++i[256];for(var s=gr(i,15),u=s.t,g=s.l,T=gr(a,15),y=T.t,E=T.l,V=Ur(u),L=V.c,M=V.n,B=Ur(y),C=B.c,Z=B.n,S=new N(19),v=0;v<L.length;++v)++S[L[v]&31];for(var v=0;v<C.length;++v)++S[C[v]&31];for(var h=gr(S,7),U=h.t,z=h.l,I=19;I>4&&!U[wr[I-1]];--I);var X=x+5<<3,P=ir(i,k)+ir(a,or)+f,G=ir(i,u)+ir(a,y)+f+14+3*I+ir(S,U)+2*S[16]+3*S[17]+7*S[18];if(p>=0&&X<=P&&X<=G)return Br(r,o,n.subarray(p,p+x));var F,w,O,D;if(Q(r,o,1+(G<P)),o+=2,G<P){F=j(u,g,0),w=u,O=j(y,E,0),D=y;var rr=j(U,z,0);Q(r,o,M-257),Q(r,o+5,Z-1),Q(r,o+10,I-4),o+=14;for(var v=0;v<I;++v)Q(r,o+3*v,U[wr[v]]);o+=3*I;for(var R=[L,C],J=0;J<2;++J)for(var $=R[J],v=0;v<$.length;++v){var H=$[v]&31;Q(r,o,rr[H]),o+=U[H],H>15&&(Q(r,o,$[v]>>5&127),o+=$[v]>>12)}}else F=Wr,w=k,O=jr,D=or;for(var v=0;v<c;++v){var m=e[v];if(m>255){var H=m>>18&31;er(r,o,F[H+257]),o+=w[H+257],H>7&&(Q(r,o,m>>23&31),o+=hr[H]);var Y=m&31;er(r,o,O[Y]),o+=D[Y],Y>3&&(er(r,o,m>>5&8191),o+=ur[Y])}else er(r,o,F[m]),o+=w[m]}return er(r,o,F[256]),o+w[256]},Xr=new Ar([65540,131080,131088,131104,262176,1048704,1048832,2114560,2117632]),Zr=new A(0),kr=function(n,r,t,e,i,a){var f=a.z||n.length,c=new A(e+f+5*(1+Math.ceil(f/7e3))+i),p=c.subarray(e,c.length-i),x=a.l,o=(a.r||0)&7;if(r){o&&(p[0]=a.r>>3);for(var s=Xr[r-1],u=s>>13,g=s&8191,T=(1<<t)-1,y=a.p||new N(32768),E=a.h||new N(T+1),V=Math.ceil(t/3),L=2*V,M=function(lr){return(n[lr]^n[lr+1]<<V^n[lr+2]<<L)&T},B=new Ar(25e3),C=new N(288),Z=new N(32),S=0,v=0,h=a.i||0,U=0,z=a.w||0,I=0;h+2<f;++h){var X=M(h),P=h&32767,G=E[X];if(y[P]=G,E[X]=P,z<=h){var F=f-h;if((S>7e3||U>24576)&&(F>423||!x)){o=Fr(n,p,0,B,C,Z,v,U,I,h-I,o),U=S=v=0,I=h;for(var w=0;w<286;++w)C[w]=0;for(var w=0;w<30;++w)Z[w]=0}var O=2,D=0,rr=g,R=P-G&32767;if(F>2&&X==M(h-R))for(var J=Math.min(u,F)-1,$=Math.min(32767,h),H=Math.min(258,F);R<=$&&--rr&&P!=G;){if(n[h+O]==n[h+O-R]){for(var m=0;m<H&&n[h+m]==n[h+m-R];++m);if(m>O){if(O=m,D=R,m>J)break;for(var Y=Math.min(R,m-2),d=0,w=0;w<Y;++w){var b=h-R+w&32767,sr=y[b],fr=b-sr&32767;fr>d&&(d=fr,G=b)}}}P=G,G=y[P],R+=P-G&32767}if(D){B[U++]=268435456|mr[O]<<18|Sr[D];var nr=mr[O]&31,tr=Sr[D]&31;v+=hr[nr]+ur[tr],++C[257+nr],++Z[tr],z=h+O,++S}else B[U++]=n[h],++C[n[h]]}}for(h=Math.max(h,z);h<f;++h)B[U++]=n[h],++C[n[h]];o=Fr(n,p,x,B,C,Z,v,U,I,h-I,o),x||(a.r=o&7|p[o/8|0]<<3,o-=7,a.h=E,a.p=y,a.i=h,a.w=z)}else{for(var h=a.w||0;h<f+x;h+=65535){var _=h+65535;_>=f&&(p[o/8|0]=x,_=f),o=Br(p,o+1,n.subarray(h,_))}a.i=f}return ar(c,0,e+Mr(o)+i)};var Er=function(){var n=1,r=0;return{p:function(t){for(var e=n,i=r,a=t.length|0,f=0;f!=a;){for(var c=Math.min(f+2655,a);f<c;++f)i+=e+=t[f];e=(e&65535)+15*(e>>16),i=(i&65535)+15*(i>>16)}n=e,r=i},d:function(){return n%=65521,r%=65521,(n&255)<<24|(n&65280)<<8|(r&255)<<8|r>>8}}},dr=function(n,r,t,e,i){if(!i&&(i={l:1},r.dictionary)){var a=r.dictionary.subarray(-32768),f=new A(a.length+n.length);f.set(a),f.set(n,a.length),n=f,i.w=a.length}return kr(n,r.level==null?6:r.level,r.mem==null?i.l?Math.ceil(Math.max(8,Math.min(13,Math.log(n.length)))*1.5):20:12+r.mem,t,e,i)};var Gr=function(n,r,t){for(;t;++r)n[r]=t,t>>>=8};var br=function(n,r){var t=r.level,e=t==0?0:t<6?1:t==9?3:2;if(n[0]=120,n[1]=e<<6|(r.dictionary&&32),n[1]|=31-(n[0]<<8|n[1])%31,r.dictionary){var i=Er();i.p(r.dictionary),Gr(n,2,i.d())}},_r=function(n,r){return((n[0]&15)!=8||n[0]>>4>7||(n[0]<<8|n[1])%31)&&q(6,"invalid zlib data"),(n[1]>>5&1)==+!r&&q(6,"invalid zlib data: "+(n[1]&32?"need":"unexpected")+" dictionary"),(n[1]>>3&4)+2};var yr=(function(){function n(r,t){typeof r=="function"&&(t=r,r={}),this.ondata=t;var e=r&&r.dictionary&&r.dictionary.subarray(-32768);this.s={i:0,b:e?e.length:0},this.o=new A(32768),this.p=new A(0),e&&this.o.set(e)}return n.prototype.e=function(r){if(this.ondata||q(5),this.d&&q(4),!this.p.length)this.p=r;else if(r.length){var t=new A(this.p.length+r.length);t.set(this.p),t.set(r,this.p.length),this.p=t}},n.prototype.c=function(r){this.s.i=+(this.d=r||!1);var t=this.s.b,e=Qr(this.p,this.s,this.o);this.ondata(ar(e,t,this.s.b),this.d),this.o=ar(e,this.s.b-32768),this.s.b=this.o.length,this.p=ar(this.p,this.s.p/8|0),this.s.p&=7},n.prototype.push=function(r,t){this.e(r),this.c(t)},n})();function Or(n,r){r||(r={});var t=Er();t.p(n);var e=dr(n,r,r.dictionary?6:2,4);return br(e,r),Gr(e,e.length-4,t.d()),e}var qr=(function(){function n(r,t){yr.call(this,r,t),this.v=r&&r.dictionary?2:1}return n.prototype.push=function(r,t){if(yr.prototype.e.call(this,r),this.v){if(this.p.length<6&&!t)return;this.p=this.p.subarray(_r(this.p,this.v-1)),this.v=0}t&&(this.p.length<4&&q(6,"invalid zlib data"),this.p=this.p.subarray(0,-4)),yr.prototype.c.call(this,t)},n})();var rn=typeof TextDecoder!="undefined"&&new TextDecoder,nn=0;try{rn.decode(Zr,{stream:!0}),nn=1}catch(n){}return Rr(tn);})();
+</script>
+<script id="hpke-library">
+/*! @hpke/core 1.9.0 + @hpke/common 1.10.0 — https://github.com/dajiaji/hpke-js
+MIT License
+
+Copyright (c) 2023 Ajitomi Daisuke
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+*/
+var CopytourlHPKE=(()=>{var Ye=Object.create;var ae=Object.defineProperty;var qe=Object.getOwnPropertyDescriptor;var Je=Object.getOwnPropertyNames;var Ze=Object.getPrototypeOf,Qe=Object.prototype.hasOwnProperty;var et=(i=>typeof require<"u"?require:typeof Proxy<"u"?new Proxy(i,{get:(e,t)=>(typeof require<"u"?require:e)[t]}):i)(function(i){if(typeof require<"u")return require.apply(this,arguments);throw Error('Dynamic require of "'+i+'" is not supported')});var tt=(i,e)=>{for(var t in e)ae(i,t,{get:e[t],enumerable:!0})},Se=(i,e,t,r)=>{if(e&&typeof e=="object"||typeof e=="function")for(let n of Je(e))!Qe.call(i,n)&&n!==t&&ae(i,n,{get:()=>e[n],enumerable:!(r=qe(e,n))||r.enumerable});return i};var rt=(i,e,t)=>(t=i!=null?Ye(Ze(i)):{},Se(e||!i||!i.__esModule?ae(t,"default",{value:i,enumerable:!0}):t,i)),it=i=>Se(ae({},"__esModule",{value:!0}),i);var tr={};tt(tr,{Aes128Gcm:()=>Q,CipherSuite:()=>re,DhkemP256HkdfSha256:()=>ie,HkdfSha256:()=>ne});var d=class extends Error{constructor(e){let t;e instanceof Error?t=e.message:typeof e=="string"?t=e:t="",super(t),this.name=this.constructor.name}},f=class extends d{};var m=class extends d{},w=class extends d{},R=class extends d{},F=class extends d{},$=class extends d{},X=class extends d{},W=class extends d{},V=class extends d{},P=class extends d{},b=class extends d{};var nt={},xe=at(globalThis,nt);function at(i,e){return new Proxy(i,{get(t,r,n){return r in e?e[r]:i[r]},set(t,r,n){return r in e&&delete e[r],i[r]=n,!0},deleteProperty(t,r){let n=!1;return r in e&&(delete e[r],n=!0),r in i&&(delete i[r],n=!0),n},ownKeys(t){let r=Reflect.ownKeys(i),n=Reflect.ownKeys(e),a=new Set(n);return[...r.filter(u=>!a.has(u)),...n]},defineProperty(t,r,n){return r in e&&delete e[r],Reflect.defineProperty(i,r,n),!0},getOwnPropertyDescriptor(t,r){return r in e?Reflect.getOwnPropertyDescriptor(e,r):Reflect.getOwnPropertyDescriptor(i,r)},has(t,r){return r in e||r in i}})}async function ot(){if(xe!==void 0&&globalThis.crypto!==void 0)return globalThis.crypto.subtle;try{let{webcrypto:i}=await import("crypto");return i.subtle}catch(i){throw new b(i)}}var p=class{constructor(){Object.defineProperty(this,"_api",{enumerable:!0,configurable:!0,writable:!0,value:void 0})}async _setup(){this._api===void 0&&(this._api=await ot())}};var v={Base:0,Psk:1,Auth:2,AuthPsk:3},y={NotAssigned:0,DhkemP256HkdfSha256:16,DhkemP384HkdfSha384:17,DhkemP521HkdfSha512:18,DhkemSecp256k1HkdfSha256:19,DhkemX25519HkdfSha256:32,DhkemX448HkdfSha512:33,HybridkemX25519Kyber768:48,MlKem512:64,MlKem768:65,MlKem1024:66,XWing:25722},Y={HkdfSha256:1,HkdfSha384:2,HkdfSha512:3,Sha3256:4,Sha3384:5,Sha3512:6,Shake128:16,Shake256:17,TurboShake128:18,TurboShake256:19},S={Aes128Gcm:1,Aes256Gcm:2,Chacha20Poly1305:3,ExportOnly:65535};var l=new Uint8Array(0);var Ie=(()=>{let i=new Array(256),e=0,t=0n;for(;e<256;)i[e]=t,e++,t+=1n;return i})();var oe=new Uint8Array([75,69,77,0,0]);var Oe=new Uint8Array([72,80,75,69,45,118,49]);function U(i){return new Uint8Array(o(i))}function o(i){return i instanceof ArrayBuffer?i:ArrayBuffer.isView(i)?new Uint8Array(i.buffer,i.byteOffset,i.byteLength).slice().buffer:new Uint8Array(i).slice().buffer}var me=class extends p{constructor(){super(),Object.defineProperty(this,"id",{enumerable:!0,configurable:!0,writable:!0,value:Y.HkdfSha256}),Object.defineProperty(this,"hashSize",{enumerable:!0,configurable:!0,writable:!0,value:0}),Object.defineProperty(this,"_suiteId",{enumerable:!0,configurable:!0,writable:!0,value:l}),Object.defineProperty(this,"algHash",{enumerable:!0,configurable:!0,writable:!0,value:{name:"HMAC",hash:"SHA-256",length:256}})}init(e){this._suiteId=e}buildLabeledIkm(e,t){this._checkInit();let r=new Uint8Array(7+this._suiteId.byteLength+e.byteLength+t.byteLength);return r.set(Oe,0),r.set(this._suiteId,7),r.set(e,7+this._suiteId.byteLength),r.set(t,7+this._suiteId.byteLength+e.byteLength),r}buildLabeledInfo(e,t,r){this._checkInit();let n=new Uint8Array(9+this._suiteId.byteLength+e.byteLength+t.byteLength);return n.set(new Uint8Array([0,r]),0),n.set(Oe,2),n.set(this._suiteId,9),n.set(e,9+this._suiteId.byteLength),n.set(t,9+this._suiteId.byteLength+e.byteLength),n}async extract(e,t){await this._setup();let r=e.byteLength===0?new ArrayBuffer(this.hashSize):o(e);if(r.byteLength!==this.hashSize)throw new f("The salt length must be the same as the hashSize");let n=o(t),a=await this._api.importKey("raw",r,this.algHash,!1,["sign"]);return await this._api.sign("HMAC",a,n)}async expand(e,t,r){await this._setup();let n=o(e),a=await this._api.importKey("raw",n,this.algHash,!1,["sign"]),u=new ArrayBuffer(r),c=new Uint8Array(u),s=l,h=U(t),_=new Uint8Array(1);if(r>255*this.hashSize)throw new Error("Entropy limit reached");let H=new Uint8Array(this.hashSize+h.length+1);for(let G=1,g=0;g<c.length;G++)_[0]=G,H.set(s,0),H.set(h,s.length),H.set(_,s.length+h.length),s=new Uint8Array(await this._api.sign("HMAC",a,H.slice(0,s.length+h.length+1))),c.length-g>=s.length?(c.set(s,g),g+=s.length):(c.set(s.slice(0,c.length-g),g),g+=c.length-g);return u}async extractAndExpand(e,t,r,n){await this._setup();let a=o(t),u=await this._api.importKey("raw",a,"HKDF",!1,["deriveBits"]);return await this._api.deriveBits({name:"HKDF",hash:this.algHash.hash,salt:o(e),info:o(r)},u,n*8)}async labeledExtract(e,t,r){return await this.extract(e,this.buildLabeledIkm(t,r))}async labeledExpand(e,t,r,n){return await this.expand(e,this.buildLabeledInfo(t,r,n),n)}_checkInit(){if(this._suiteId===l)throw new Error("Not initialized. Call init()")}},k=class extends me{constructor(){super(...arguments),Object.defineProperty(this,"id",{enumerable:!0,configurable:!0,writable:!0,value:Y.HkdfSha256}),Object.defineProperty(this,"hashSize",{enumerable:!0,configurable:!0,writable:!0,value:32}),Object.defineProperty(this,"algHash",{enumerable:!0,configurable:!0,writable:!0,value:{name:"HMAC",hash:"SHA-256",length:256}})}};var K=i=>typeof i=="object"&&i!==null&&typeof i.privateKey=="object"&&typeof i.publicKey=="object";function x(i,e){if(e<=0)throw new Error("i2Osp: too small size");if(i>=256**e)throw new Error("i2Osp: too large integer");let t=new Uint8Array(e);for(let r=0;r<e&&i;r++)t[e-(r+1)]=i%256,i=Math.floor(i/256);return t}function E(i,e){let t=new Uint8Array(i.length+e.length);return t.set(i,0),t.set(e,i.length),t}function z(i){let e=i.replace(/-/g,"+").replace(/_/g,"/"),t=atob(e),r=new Uint8Array(t.length);for(let n=0;n<t.length;n++)r[n]=t.charCodeAt(n);return r}function _e(i,e){if(i.byteLength!==e.byteLength)throw new Error("xor: different length inputs");let t=new Uint8Array(i.byteLength);for(let r=0;r<i.byteLength;r++)t[r]=i[r]^e[r];return t}var st=new Uint8Array([101,97,101,95,112,114,107]),ut=new Uint8Array([115,104,97,114,101,100,95,115,101,99,114,101,116]);function ct(i,e,t){let r=new Uint8Array(i.length+e.length+t.length);return r.set(i,0),r.set(e,i.length),r.set(t,i.length+e.length),r}var I=class{constructor(e,t,r){Object.defineProperty(this,"id",{enumerable:!0,configurable:!0,writable:!0,value:void 0}),Object.defineProperty(this,"secretSize",{enumerable:!0,configurable:!0,writable:!0,value:0}),Object.defineProperty(this,"encSize",{enumerable:!0,configurable:!0,writable:!0,value:0}),Object.defineProperty(this,"publicKeySize",{enumerable:!0,configurable:!0,writable:!0,value:0}),Object.defineProperty(this,"privateKeySize",{enumerable:!0,configurable:!0,writable:!0,value:0}),Object.defineProperty(this,"_prim",{enumerable:!0,configurable:!0,writable:!0,value:void 0}),Object.defineProperty(this,"_kdf",{enumerable:!0,configurable:!0,writable:!0,value:void 0}),this.id=e,this._prim=t,this._kdf=r;let n=new Uint8Array(oe);n.set(x(this.id,2),3),this._kdf.init(n)}async serializePublicKey(e){return await this._prim.serializePublicKey(e)}async deserializePublicKey(e){return await this._prim.deserializePublicKey(o(e))}async serializePrivateKey(e){return await this._prim.serializePrivateKey(e)}async deserializePrivateKey(e){return await this._prim.deserializePrivateKey(o(e))}async importKey(e,t,r=!0){return await this._prim.importKey(e,t,r)}async generateKeyPair(){return await this._prim.generateKeyPair()}async deriveKeyPair(e){let t=o(e);if(t.byteLength>8192)throw new f("Too long ikm");return await this._prim.deriveKeyPair(t)}async encap(e){let t;e.ekm===void 0?t=await this.generateKeyPair():K(e.ekm)?t=e.ekm:t=await this.deriveKeyPair(e.ekm);let r=await this._prim.serializePublicKey(t.publicKey),n=await this._prim.serializePublicKey(e.recipientPublicKey);try{let a;if(e.senderKey===void 0)a=new Uint8Array(await this._prim.dh(t.privateKey,e.recipientPublicKey));else{let s=K(e.senderKey)?e.senderKey.privateKey:e.senderKey,h=new Uint8Array(await this._prim.dh(t.privateKey,e.recipientPublicKey)),_=new Uint8Array(await this._prim.dh(s,e.recipientPublicKey));a=E(h,_)}let u;if(e.senderKey===void 0)u=E(new Uint8Array(r),new Uint8Array(n));else{let s=K(e.senderKey)?e.senderKey.publicKey:await this._prim.derivePublicKey(e.senderKey),h=await this._prim.serializePublicKey(s);u=ct(new Uint8Array(r),new Uint8Array(n),new Uint8Array(h))}let c=await this._generateSharedSecret(a,u);return{enc:r,sharedSecret:c}}catch(a){throw new R(a)}}async decap(e){let t=o(e.enc),r=await this._prim.deserializePublicKey(t),n=K(e.recipientKey)?e.recipientKey.privateKey:e.recipientKey,a=K(e.recipientKey)?e.recipientKey.publicKey:await this._prim.derivePublicKey(e.recipientKey),u=await this._prim.serializePublicKey(a);try{let c;if(e.senderPublicKey===void 0)c=new Uint8Array(await this._prim.dh(n,r));else{let h=new Uint8Array(await this._prim.dh(n,r)),_=new Uint8Array(await this._prim.dh(n,e.senderPublicKey));c=E(h,_)}let s;if(e.senderPublicKey===void 0)s=E(new Uint8Array(t),new Uint8Array(u));else{let h=await this._prim.serializePublicKey(e.senderPublicKey);s=new Uint8Array(t.byteLength+u.byteLength+h.byteLength),s.set(new Uint8Array(t),0),s.set(new Uint8Array(u),t.byteLength),s.set(new Uint8Array(h),t.byteLength+u.byteLength)}return await this._generateSharedSecret(c,s)}catch(c){throw new F(c)}}async _generateSharedSecret(e,t){let r=this._kdf.buildLabeledIkm(st,e),n=this._kdf.buildLabeledInfo(ut,t,this.secretSize);return await this._kdf.extractAndExpand(l,r,n,this.secretSize)}};var A=["deriveBits"],L=new Uint8Array([100,107,112,95,112,114,107]);var se=class{constructor(e){Object.defineProperty(this,"_num",{enumerable:!0,configurable:!0,writable:!0,value:void 0}),this._num=new Uint8Array(e)}val(){return this._num}reset(){this._num.fill(0)}set(e){if(e.length!==this._num.length)throw new Error("Bignum.set: invalid argument");this._num.set(e)}isZero(){for(let e=0;e<this._num.length;e++)if(this._num[e]!==0)return!1;return!0}lessThan(e){if(e.length!==this._num.length)throw new Error("Bignum.lessThan: invalid argument");for(let t=0;t<this._num.length;t++){if(this._num[t]<e[t])return!0;if(this._num[t]>e[t])return!1}return!1}};var lt=new Uint8Array([99,97,110,100,105,100,97,116,101]),ft=new Uint8Array([255,255,255,255,0,0,0,0,255,255,255,255,255,255,255,255,188,230,250,173,167,23,158,132,243,185,202,194,252,99,37,81]),ht=new Uint8Array([255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,199,99,77,129,244,55,45,223,88,26,13,178,72,176,167,122,236,236,25,106,204,197,41,115]),dt=new Uint8Array([1,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,250,81,134,135,131,191,47,150,107,127,204,1,72,247,9,165,208,59,181,201,184,137,156,71,174,187,111,183,30,145,56,100,9]),bt=new Uint8Array([48,65,2,1,0,48,19,6,7,42,134,72,206,61,2,1,6,8,42,134,72,206,61,3,1,7,4,39,48,37,2,1,1,4,32]),pt=new Uint8Array([48,78,2,1,0,48,16,6,7,42,134,72,206,61,2,1,6,5,43,129,4,0,34,4,55,48,53,2,1,1,4,48]),yt=new Uint8Array([48,96,2,1,0,48,16,6,7,42,134,72,206,61,2,1,6,5,43,129,4,0,35,4,73,48,71,2,1,1,4,66]),wt={p:0xffffffff00000001000000000000000000000000ffffffffffffffffffffffffn,b:0x5ac635d8aa3a93e7b3ebbd55769886bc651d06b0cc53b0f63bce3c3e27d2604bn,gx:0x6b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296n,gy:0x4fe342e2fe1a7f9b8ee7eb4a7c0f9e162bce33576b315ececbb6406837bf51f5n,coordinateSize:32},xt={p:0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffeffffffff0000000000000000ffffffffn,b:0xb3312fa7e23ee7e4988e056be3f82d19181d9c6efe8141120314088f5013875ac656398d8a2ed19d2a85c8edd3ec2aefn,gx:0xaa87ca22be8b05378eb1c71ef320ad746e1d3b628ba79b9859f741e082542a385502f25dbf55296c3a545e3872760ab7n,gy:0x3617de4a96262c6f5d9e98bf9292dc29f8f41dbd289a147ce9da3113b5f0b8c00a60b1ce1d7e819d7a431d7c90ea0e5fn,coordinateSize:48},mt={p:(1n<<521n)-1n,b:0x0051953eb9618e1c9a1f929a21a0b68540eea2da725b99b315f3b8b489918ef109e156193951ec7e937b1652c0bd3bb1bf073573df883d2c34f1ef451fd46b503f00n,gx:0x00c6858e06b70404e9cd9e3ecb662395b4429c648139053fb521f828af606b4d3dbaa14b5e77efe75928fe1dc127a2ffa8de3348b3c1856a429bf97e7e31c2e5bd66n,gy:0x011839296a789a3bc0045c8a5fb42c7d1bd998f54449579b446817afbd17273e662c97ee72995ef42640c550b9013fad0761353c7086a272c24088be94769fd16650n,coordinateSize:66};function T(i,e){let t=i%e;return t>=0n?t:t+e}function He(i,e,t){let r=1n,n=T(i,t),a=e;for(;a>0n;)(a&1n)===1n&&(r=T(r*n,t)),n=T(n*n,t),a>>=1n;return r}function _t(i,e){let t=He(i,e+1n>>2n,e);if(T(t*t,e)!==T(i,e))throw new Error("Invalid ECDH point");return t}function gt(i){let e=0n;for(let t of i)e=e<<8n|Ie[t];return e}function Le(i,e){let t=new Uint8Array(e),r=i;for(let n=e-1;n>=0;n--)t[n]=Number(r&0xffn),r>>=8n;if(r!==0n)throw new Error("Invalid coordinate length");return t}function je(i,e,t){let r=new Uint8Array(1+t*2);return r[0]=4,r.set(Le(i,t),1),r.set(Le(e,t),1+t),r}var q=class extends p{constructor(e,t){switch(super(),Object.defineProperty(this,"_hkdf",{enumerable:!0,configurable:!0,writable:!0,value:void 0}),Object.defineProperty(this,"_alg",{enumerable:!0,configurable:!0,writable:!0,value:void 0}),Object.defineProperty(this,"_nPk",{enumerable:!0,configurable:!0,writable:!0,value:void 0}),Object.defineProperty(this,"_nSk",{enumerable:!0,configurable:!0,writable:!0,value:void 0}),Object.defineProperty(this,"_nDh",{enumerable:!0,configurable:!0,writable:!0,value:void 0}),Object.defineProperty(this,"_order",{enumerable:!0,configurable:!0,writable:!0,value:void 0}),Object.defineProperty(this,"_bitmask",{enumerable:!0,configurable:!0,writable:!0,value:void 0}),Object.defineProperty(this,"_pkcs8AlgId",{enumerable:!0,configurable:!0,writable:!0,value:void 0}),Object.defineProperty(this,"_curveParams",{enumerable:!0,configurable:!0,writable:!0,value:void 0}),this._hkdf=t,e){case y.DhkemP256HkdfSha256:this._alg={name:"ECDH",namedCurve:"P-256"},this._nPk=65,this._nSk=32,this._nDh=32,this._order=ft,this._bitmask=255,this._pkcs8AlgId=bt,this._curveParams=wt;break;case y.DhkemP384HkdfSha384:this._alg={name:"ECDH",namedCurve:"P-384"},this._nPk=97,this._nSk=48,this._nDh=48,this._order=ht,this._bitmask=255,this._pkcs8AlgId=pt,this._curveParams=xt;break;default:this._alg={name:"ECDH",namedCurve:"P-521"},this._nPk=133,this._nSk=66,this._nDh=66,this._order=dt,this._bitmask=1,this._pkcs8AlgId=yt,this._curveParams=mt;break}}async serializePublicKey(e){await this._setup();try{return await this._api.exportKey("raw",e)}catch(t){throw new m(t)}}async deserializePublicKey(e){await this._setup();try{return await this._importRawKey(o(e),!0)}catch(t){throw new w(t)}}async serializePrivateKey(e){await this._setup();try{let t=await this._api.exportKey("jwk",e);if(!("d"in t))throw new Error("Not private key");return z(t.d).buffer}catch(t){throw new m(t)}}async deserializePrivateKey(e){await this._setup();try{return await this._importRawKey(o(e),!1)}catch(t){throw new w(t)}}async importKey(e,t,r){await this._setup();try{if(e==="raw")return await this._importRawKey(t,r);if(t instanceof ArrayBuffer)throw new Error("Invalid jwk key format");return await this._importJWK(t,r)}catch(n){throw new w(n)}}async generateKeyPair(){await this._setup();try{return await this._api.generateKey(this._alg,!0,A)}catch(e){throw new b(e)}}async deriveKeyPair(e){await this._setup();try{let t=o(e),r=await this._hkdf.labeledExtract(l,L,new Uint8Array(t)),n=new se(this._nSk);for(let u=0;n.isZero()||!n.lessThan(this._order);u++){if(u>255)throw new Error("Faild to derive a key pair");let c=new Uint8Array(await this._hkdf.labeledExpand(r,lt,x(u,1),this._nSk));c[0]=c[0]&this._bitmask,n.set(c)}let a=await this._deserializePkcs8Key(n.val());return n.reset(),{privateKey:a,publicKey:await this.derivePublicKey(a)}}catch(t){throw new P(t)}}async derivePublicKey(e){await this._setup();try{let t=await this._api.exportKey("jwk",e);return delete t.d,delete t.key_ops,await this._api.importKey("jwk",t,this._alg,!0,[])}catch{try{return await this._derivePublicKeyWithoutJwkExport(e)}catch(t){throw new w(t)}}}async dh(e,t){try{return await this._setup(),await this._api.deriveBits({name:"ECDH",public:t},e,this._nDh*8)}catch(r){throw new m(r)}}async _importRawKey(e,t){if(t&&e.byteLength!==this._nPk)throw new Error("Invalid public key for the ciphersuite");if(!t&&e.byteLength!==this._nSk)throw new Error("Invalid private key for the ciphersuite");return t?await this._api.importKey("raw",e,this._alg,!0,[]):await this._deserializePkcs8Key(new Uint8Array(e))}async _importJWK(e,t){if(typeof e.crv>"u"||e.crv!==this._alg.namedCurve)throw new Error(`Invalid crv: ${e.crv}`);if(t){if(typeof e.d<"u")throw new Error("Invalid key: `d` should not be set");return await this._api.importKey("jwk",e,this._alg,!0,[])}if(typeof e.d>"u")throw new Error("Invalid key: `d` not found");return await this._api.importKey("jwk",e,this._alg,!0,A)}async _deserializePkcs8Key(e){let t=new Uint8Array(this._pkcs8AlgId.length+e.length);return t.set(this._pkcs8AlgId,0),t.set(e,this._pkcs8AlgId.length),await this._api.importKey("pkcs8",t,this._alg,!0,A)}async _derivePublicKeyWithoutJwkExport(e){let t=je(this._curveParams.gx,this._curveParams.gy,this._curveParams.coordinateSize),r=await this._api.importKey("raw",t.buffer,this._alg,!0,[]),n=new Uint8Array(await this._api.deriveBits({name:"ECDH",public:r},e,this._nDh*8)),a=this._curveParams.p,u=gt(n),c=T(He(u,3n,a)-3n*u+this._curveParams.b,a),s=_t(c,a);(s&1n)===1n&&(s=a-s);let h=je(u,s,this._curveParams.coordinateSize);return await this._api.importKey("raw",h.buffer,this._alg,!0,[])}};var ge=["encrypt","decrypt"];function Pt(i){return i instanceof Uint8Array||ArrayBuffer.isView(i)&&i.constructor.name==="Uint8Array"}function J(i,e=""){if(!Number.isSafeInteger(i)||i<0){let t=e&&`"${e}" `;throw new Error(`${t}expected integer >0, got ${i}`)}}function j(i,e,t=""){let r=Pt(i),n=i?.length,a=e!==void 0;if(!r||a&&n!==e){let u=t&&`"${t}" `,c=a?` of length ${e}`:"",s=r?`length=${n}`:`type=${typeof i}`;throw new Error(u+"expected Uint8Array"+c+", got "+s)}return i}function D(i,e=!0){if(i.destroyed)throw new Error("Hash instance has been destroyed");if(e&&i.finished)throw new Error("Hash#digest() has already been called")}function N(...i){for(let e=0;e<i.length;e++)i[e].fill(0)}var kt=new Uint32Array([287454020]),Kt=new Uint8Array(kt.buffer),At=Kt[0]===68;function Te(i){if(typeof i!="function"||typeof i.create!="function")throw new Error("Hash must wrapped by utils.createHasher");J(i.outputLen),J(i.blockLen)}var ce=class{constructor(e,t){if(Object.defineProperty(this,"oHash",{enumerable:!0,configurable:!0,writable:!0,value:void 0}),Object.defineProperty(this,"iHash",{enumerable:!0,configurable:!0,writable:!0,value:void 0}),Object.defineProperty(this,"blockLen",{enumerable:!0,configurable:!0,writable:!0,value:void 0}),Object.defineProperty(this,"outputLen",{enumerable:!0,configurable:!0,writable:!0,value:void 0}),Object.defineProperty(this,"finished",{enumerable:!0,configurable:!0,writable:!0,value:!1}),Object.defineProperty(this,"destroyed",{enumerable:!0,configurable:!0,writable:!0,value:!1}),Te(e),j(t,void 0,"key"),this.iHash=e.create(),typeof this.iHash.update!="function")throw new Error("Expected instance of class which extends utils.Hash");this.blockLen=this.iHash.blockLen,this.outputLen=this.iHash.outputLen;let r=this.blockLen,n=new Uint8Array(r);n.set(t.length>r?e.create().update(t).digest():t);for(let a=0;a<n.length;a++)n[a]^=54;this.iHash.update(n),this.oHash=e.create();for(let a=0;a<n.length;a++)n[a]^=106;this.oHash.update(n),N(n)}update(e){return D(this),this.iHash.update(e),this}digestInto(e){D(this),j(e,this.outputLen,"output"),this.finished=!0,this.iHash.digestInto(e),this.oHash.update(e),this.oHash.digestInto(e),this.destroy()}digest(){let e=new Uint8Array(this.oHash.outputLen);return this.digestInto(e),e}_cloneInto(e){e||(e=Object.create(Object.getPrototypeOf(this),{}));let{oHash:t,iHash:r,finished:n,destroyed:a,blockLen:u,outputLen:c}=this;return e=e,e.finished=n,e.destroyed=a,e.blockLen=u,e.outputLen=c,e.oHash=t._cloneInto(e.oHash),e.iHash=r._cloneInto(e.iHash),e}clone(){return this._cloneInto()}destroy(){this.destroyed=!0,this.oHash.destroy(),this.iHash.destroy()}},De=(i,e,t)=>new ce(i,e).update(t).digest();De.create=(i,e)=>new ce(i,e);var le=0xffffffffn,Be=32n;function It(i,e=!1){return e?{h:Number(i&le),l:Number(i>>Be&le)}:{h:Number(i>>Be&le)|0,l:Number(i&le)|0}}function ve(i,e=!1){let t=i.length,r=new Uint32Array(t),n=new Uint32Array(t);for(let a=0;a<t;a++){let{h:u,l:c}=It(i[a],e);[r[a],n[a]]=[u,c]}return[r,n]}var Ut=0n,Z=1n,zt=2n,Tt=7n,Dt=256n,Nt=0x71n,Bt=[],Ct=[],Ce=[];for(let i=0,e=Z,t=1,r=0;i<24;i++){[t,r]=[r,(2*t+3*r)%5],Bt.push(2*(5*r+t)),Ct.push((i+1)*(i+2)/2%64);let n=Ut;for(let a=0;a<7;a++)e=(e<<Z^(e>>Tt)*Nt)%Dt,e&zt&&(n^=Z<<(Z<<BigInt(a))-Z);Ce.push(n)}var Me=ve(Ce,!0),Bi=Me[0],Ci=Me[1];var Ke=class extends p{constructor(e){super(),Object.defineProperty(this,"_rawKey",{enumerable:!0,configurable:!0,writable:!0,value:void 0}),Object.defineProperty(this,"_key",{enumerable:!0,configurable:!0,writable:!0,value:void 0}),this._rawKey=o(e)}async seal(e,t,r){await this._setupKey();let n={name:"AES-GCM",iv:o(e),additionalData:o(r)};return await this._api.encrypt(n,this._key,o(t))}async open(e,t,r){await this._setupKey();let n={name:"AES-GCM",iv:o(e),additionalData:o(r)};return await this._api.decrypt(n,this._key,o(t))}async _setupKey(){if(this._key!==void 0)return;await this._setup();let e=await this._importKey(this._rawKey);new Uint8Array(this._rawKey).fill(0),this._key=e}async _importKey(e){return await this._api.importKey("raw",e,{name:"AES-GCM"},!0,ge)}},Q=class{constructor(){Object.defineProperty(this,"id",{enumerable:!0,configurable:!0,writable:!0,value:S.Aes128Gcm}),Object.defineProperty(this,"keySize",{enumerable:!0,configurable:!0,writable:!0,value:16}),Object.defineProperty(this,"nonceSize",{enumerable:!0,configurable:!0,writable:!0,value:12}),Object.defineProperty(this,"tagSize",{enumerable:!0,configurable:!0,writable:!0,value:16})}createEncryptionContext(e){return new Ke(e)}};function Ae(){return new Promise((i,e)=>{e(new b("Not supported"))})}var Rt=new Uint8Array([115,101,99]),B=class{constructor(e,t,r){Object.defineProperty(this,"_api",{enumerable:!0,configurable:!0,writable:!0,value:void 0}),Object.defineProperty(this,"exporterSecret",{enumerable:!0,configurable:!0,writable:!0,value:void 0}),Object.defineProperty(this,"_kdf",{enumerable:!0,configurable:!0,writable:!0,value:void 0}),this._api=e,this._kdf=t,this.exporterSecret=r}async seal(e,t){return await Ae()}async open(e,t){return await Ae()}async export(e,t){let r=o(e);if(r.byteLength>8192)throw new f("Too long exporter context");try{return await this._kdf.labeledExpand(this.exporterSecret,Rt,new Uint8Array(r),t)}catch(n){throw new $(n)}}},fe=class extends B{},he=class extends B{constructor(e,t,r,n){super(e,t,r),Object.defineProperty(this,"enc",{enumerable:!0,configurable:!0,writable:!0,value:void 0}),this.enc=n}};var C=class extends B{constructor(e,t,r){if(super(e,t,r.exporterSecret),Object.defineProperty(this,"_aead",{enumerable:!0,configurable:!0,writable:!0,value:void 0}),Object.defineProperty(this,"_nK",{enumerable:!0,configurable:!0,writable:!0,value:void 0}),Object.defineProperty(this,"_nN",{enumerable:!0,configurable:!0,writable:!0,value:void 0}),Object.defineProperty(this,"_nT",{enumerable:!0,configurable:!0,writable:!0,value:void 0}),Object.defineProperty(this,"_ctx",{enumerable:!0,configurable:!0,writable:!0,value:void 0}),r.key===void 0||r.baseNonce===void 0||r.seq===void 0)throw new Error("Required parameters are missing");this._aead=r.aead,this._nK=this._aead.keySize,this._nN=this._aead.nonceSize,this._nT=this._aead.tagSize;let n=this._aead.createEncryptionContext(r.key);this._ctx={key:n,baseNonce:r.baseNonce,seq:r.seq}}computeNonce(e){let t=x(e.seq,e.baseNonce.byteLength);return _e(e.baseNonce,t).buffer}incrementSeq(e){if(e.seq>Number.MAX_SAFE_INTEGER)throw new V("Message limit reached");e.seq+=1}};var Ft=function(i,e,t,r){if(t==="a"&&!r)throw new TypeError("Private accessor was defined without a getter");if(typeof e=="function"?i!==e||!r:!e.has(i))throw new TypeError("Cannot read private member from an object whose class did not declare it");return t==="m"?r:t==="a"?r.call(i):r?r.value:e.get(i)},$t=function(i,e,t,r,n){if(r==="m")throw new TypeError("Private method is not writable");if(r==="a"&&!n)throw new TypeError("Private accessor was defined without a setter");if(typeof e=="function"?i!==e||!n:!e.has(i))throw new TypeError("Cannot write private member to an object whose class did not declare it");return r==="a"?n.call(i,t):n?n.value=t:e.set(i,t),t},de,M=class{constructor(){de.set(this,Promise.resolve())}async lock(){let e,t=new Promise(n=>{e=n}),r=Ft(this,de,"f");return $t(this,de,t,"f"),await r,e}};de=new WeakMap;var Fe=function(i,e,t,r){if(t==="a"&&!r)throw new TypeError("Private accessor was defined without a getter");if(typeof e=="function"?i!==e||!r:!e.has(i))throw new TypeError("Cannot read private member from an object whose class did not declare it");return t==="m"?r:t==="a"?r.call(i):r?r.value:e.get(i)},Xt=function(i,e,t,r,n){if(r==="m")throw new TypeError("Private method is not writable");if(r==="a"&&!n)throw new TypeError("Private accessor was defined without a setter");if(typeof e=="function"?i!==e||!n:!e.has(i))throw new TypeError("Cannot write private member to an object whose class did not declare it");return r==="a"?n.call(i,t):n?n.value=t:e.set(i,t),t},ee,be=class extends C{constructor(){super(...arguments),ee.set(this,void 0)}async open(e,t=l.buffer){Xt(this,ee,Fe(this,ee,"f")??new M,"f");let r=await Fe(this,ee,"f").lock(),n;try{n=await this._ctx.key.open(this.computeNonce(this._ctx),o(e),o(t))}catch(a){throw new W(a)}finally{r()}return this.incrementSeq(this._ctx),n}};ee=new WeakMap;var $e=function(i,e,t,r){if(t==="a"&&!r)throw new TypeError("Private accessor was defined without a getter");if(typeof e=="function"?i!==e||!r:!e.has(i))throw new TypeError("Cannot read private member from an object whose class did not declare it");return t==="m"?r:t==="a"?r.call(i):r?r.value:e.get(i)},Wt=function(i,e,t,r,n){if(r==="m")throw new TypeError("Private method is not writable");if(r==="a"&&!n)throw new TypeError("Private accessor was defined without a setter");if(typeof e=="function"?i!==e||!n:!e.has(i))throw new TypeError("Cannot write private member to an object whose class did not declare it");return r==="a"?n.call(i,t):n?n.value=t:e.set(i,t),t},te,pe=class extends C{constructor(e,t,r,n){super(e,t,r),Object.defineProperty(this,"enc",{enumerable:!0,configurable:!0,writable:!0,value:void 0}),te.set(this,void 0),this.enc=n}async seal(e,t=l.buffer){Wt(this,te,$e(this,te,"f")??new M,"f");let r=await $e(this,te,"f").lock(),n;try{n=await this._ctx.key.seal(this.computeNonce(this._ctx),o(e),o(t))}catch(a){throw new X(a)}finally{r()}return this.incrementSeq(this._ctx),n}};te=new WeakMap;var Vt=new Uint8Array([98,97,115,101,95,110,111,110,99,101]),Yt=new Uint8Array([101,120,112]),qt=new Uint8Array([105,110,102,111,95,104,97,115,104]),Jt=new Uint8Array([107,101,121]),Zt=new Uint8Array([112,115,107,95,105,100,95,104,97,115,104]),Qt=new Uint8Array([115,101,99,114,101,116]),er=new Uint8Array([72,80,75,69,0,0,0,0,0,0]),ye=class extends p{constructor(e){if(super(),Object.defineProperty(this,"_kem",{enumerable:!0,configurable:!0,writable:!0,value:void 0}),Object.defineProperty(this,"_kdf",{enumerable:!0,configurable:!0,writable:!0,value:void 0}),Object.defineProperty(this,"_aead",{enumerable:!0,configurable:!0,writable:!0,value:void 0}),Object.defineProperty(this,"_suiteId",{enumerable:!0,configurable:!0,writable:!0,value:void 0}),typeof e.kem=="number")throw new f("KemId cannot be used");if(this._kem=e.kem,typeof e.kdf=="number")throw new f("KdfId cannot be used");if(this._kdf=e.kdf,typeof e.aead=="number")throw new f("AeadId cannot be used");this._aead=e.aead,this._suiteId=new Uint8Array(er),this._suiteId.set(x(this._kem.id,2),4),this._suiteId.set(x(this._kdf.id,2),6),this._suiteId.set(x(this._aead.id,2),8),this._kdf.init(this._suiteId)}get kem(){return this._kem}get kdf(){return this._kdf}get aead(){return this._aead}async createSenderContext(e){this._validateInputLength(e),await this._setup();let t=await this._kem.encap(e),r;return e.psk!==void 0?r=e.senderKey!==void 0?v.AuthPsk:v.Psk:r=e.senderKey!==void 0?v.Auth:v.Base,await this._keyScheduleS(r,t.sharedSecret,t.enc,e)}async createRecipientContext(e){this._validateInputLength(e),await this._setup();let t=await this._kem.decap(e),r;return e.psk!==void 0?r=e.senderPublicKey!==void 0?v.AuthPsk:v.Psk:r=e.senderPublicKey!==void 0?v.Auth:v.Base,await this._keyScheduleR(r,t,e)}async seal(e,t,r=l.buffer){let n=await this.createSenderContext(e);return{ct:await n.seal(t,r),enc:n.enc}}async open(e,t,r=l.buffer){return await(await this.createRecipientContext(e)).open(t,r)}async _keySchedule(e,t,r){let n=r.psk===void 0?l:U(r.psk.id),a=await this._kdf.labeledExtract(l,Zt,n),u=r.info===void 0?l:U(r.info),c=await this._kdf.labeledExtract(l,qt,u),s=new Uint8Array(1+a.byteLength+c.byteLength);s.set(new Uint8Array([e]),0),s.set(new Uint8Array(a),1),s.set(new Uint8Array(c),1+a.byteLength);let h=r.psk===void 0?l:U(r.psk.key),_=this._kdf.buildLabeledIkm(Qt,h),H=this._kdf.buildLabeledInfo(Yt,s,this._kdf.hashSize),G=await this._kdf.extractAndExpand(t,_,H,this._kdf.hashSize);if(this._aead.id===S.ExportOnly)return{aead:this._aead,exporterSecret:G};let g=this._kdf.buildLabeledInfo(Jt,s,this._aead.keySize),Xe=await this._kdf.extractAndExpand(t,_,g,this._aead.keySize),We=this._kdf.buildLabeledInfo(Vt,s,this._aead.nonceSize),Ve=await this._kdf.extractAndExpand(t,_,We,this._aead.nonceSize);return{aead:this._aead,exporterSecret:G,key:Xe,baseNonce:new Uint8Array(Ve),seq:0}}async _keyScheduleS(e,t,r,n){let a=await this._keySchedule(e,t,n);return a.key===void 0?new he(this._api,this._kdf,a.exporterSecret,r):new pe(this._api,this._kdf,a,r)}async _keyScheduleR(e,t,r){let n=await this._keySchedule(e,t,r);return n.key===void 0?new fe(this._api,this._kdf,n.exporterSecret):new be(this._api,this._kdf,n)}_validateInputLength(e){if(e.info!==void 0&&e.info.byteLength>65536)throw new f("Too long info");if(e.psk!==void 0){if(e.psk.key.byteLength<32)throw new f(`PSK must have at least ${32} bytes`);if(e.psk.key.byteLength>8192)throw new f("Too long psk.key");if(e.psk.id.byteLength>8192)throw new f("Too long psk.id")}}};var we=class extends I{constructor(){let e=new k,t=new q(y.DhkemP256HkdfSha256,e);super(y.DhkemP256HkdfSha256,t,e),Object.defineProperty(this,"id",{enumerable:!0,configurable:!0,writable:!0,value:y.DhkemP256HkdfSha256}),Object.defineProperty(this,"secretSize",{enumerable:!0,configurable:!0,writable:!0,value:32}),Object.defineProperty(this,"encSize",{enumerable:!0,configurable:!0,writable:!0,value:65}),Object.defineProperty(this,"publicKeySize",{enumerable:!0,configurable:!0,writable:!0,value:65}),Object.defineProperty(this,"privateKeySize",{enumerable:!0,configurable:!0,writable:!0,value:32})}};var re=class extends ye{},ie=class extends we{};var ne=class extends k{};var Aa=new Uint8Array([48,46,2,1,0,48,5,6,3,43,101,110,4,34,4,32]);var Ha=new Uint8Array([48,70,2,1,0,48,5,6,3,43,101,111,4,58,4,56]);return it(tr);})();
+</script>
+<script id="app">
+(() => {
+  const BASE = "https://copytourl.github.io/copytourl/";
+  const RECIPIENT = {"kid":"ef1853219c7df7da","jwk":{"kty":"EC","x":"UDLxJIEAUi9pOB4AOHKMG8fCn_qtz1cEHD9dUvGwlOg","y":"nBh-MMkowZBtiVvwwS6atMTN5TtRPJJDGAJ_2hcer5U","crv":"P-256"}};
+  const RECEIVER = /* receiver-key */ null;
+  const MAX_BYTES = 1048576;
+  // Eight-byte key ID + 65-byte KEM encapsulation + mode byte + 16-byte GCM tag.
+  const ENVELOPE_OVERHEAD = 90;
+  const MAX_HASH_LENGTH = 4 + Math.ceil((MAX_BYTES + ENVELOPE_OVERHEAD) * 4 / 3);
+  const el = id => document.getElementById(id);
+  const encoder = new TextEncoder();
+  const decoder = new TextDecoder('utf-8', {fatal:true, ignoreBOM:true});
+  let received = '', noticeTimer;
+  let renderRevision = 0, inputRevision = 0;
+  el('download-html').href = BASE + 'copytourl.html';
+  el('download-html').hidden = location.protocol === 'file:';
+
+  function textBytes(text) {
+    if (text.length > MAX_BYTES) throw Error('텍스트는 1 MB까지 사용할 수 있어요.');
+    const bytes = encoder.encode(text);
+    if (!text.trim()) throw Error('텍스트를 입력해 주세요.');
+    if (bytes.length > MAX_BYTES) throw Error('텍스트는 1 MB까지 사용할 수 있어요.');
+    if (decoder.decode(bytes) !== text) throw Error('텍스트의 문자를 확인해 주세요.');
+    return bytes;
+  }
+
+  function toBase64url(bytes) {
+    let binary = '';
+    for (let i = 0; i < bytes.length; i += 8192) {
+      binary += String.fromCharCode(...bytes.subarray(i, i + 8192));
+    }
+    return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+
+  function fromBase64url(payload) {
+    const binary = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
+    const bytes = Uint8Array.from(binary, char => char.charCodeAt(0));
+    if (toBase64url(bytes) !== payload) throw Error('Invalid encoding');
+    return bytes;
+  }
+
+  function compress(bytes) {
+    return CopytourlCompression.zlibSync(bytes, {level:9});
+  }
+
+  function decompress(bytes) {
+    if (bytes.length < 6) throw Error('Invalid zlib');
+    const chunks = [];
+    let size = 0;
+    // Small compressed chunks bound each expansion before enforcing the total limit.
+    const stream = new CopytourlCompression.Unzlib(chunk => {
+      size += chunk.length;
+      if (size > MAX_BYTES) throw Error('Too much text');
+      chunks.push(chunk);
+    });
+    for (let i = 0; i < bytes.length; i += 256) {
+      stream.push(bytes.subarray(i, i + 256), i + 256 >= bytes.length);
+    }
+    const result = new Uint8Array(size);
+    let offset = 0;
+    for (const chunk of chunks) { result.set(chunk, offset); offset += chunk.length; }
+    // fflate does not validate the zlib checksum. Reject damaged or truncated links.
+    let a = 1, b = 0;
+    for (const byte of result) { a = (a + byte) % 65521; b = (b + a) % 65521; }
+    const expected = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength).getUint32(bytes.length - 4);
+    if (((b << 16 | a) >>> 0) !== expected) throw Error('Invalid checksum');
+    return result;
+  }
+
+  function suite() {
+    if (!globalThis.crypto?.subtle || !RECIPIENT) {
+      throw Error('이 브라우저에서는 암호화 링크를 사용할 수 없어요. 최신 브라우저로 열어 주세요.');
+    }
+    const {CipherSuite, DhkemP256HkdfSha256, HkdfSha256, Aes128Gcm} = CopytourlHPKE;
+    return new CipherSuite({kem:new DhkemP256HkdfSha256(), kdf:new HkdfSha256(), aead:new Aes128Gcm()});
+  }
+
+  function keyIdBytes() {
+    return Uint8Array.from(RECIPIENT.kid.match(/../g), value => parseInt(value, 16));
+  }
+
+  function keyInfo() { return encoder.encode('copytourl:e1:' + RECIPIENT.kid); }
+
+  async function encode(text) {
+    const bytes = textBytes(text);
+    const packed = compress(bytes);
+    const useCompression = packed.length < bytes.length;
+    const payload = new Uint8Array(1 + (useCompression ? packed.length : bytes.length));
+    payload[0] = useCompression ? 1 : 0;
+    payload.set(useCompression ? packed : bytes, 1);
+    const cipher = suite();
+    const recipientPublicKey = await cipher.kem.importKey('jwk', RECIPIENT.jwk, true);
+    // A fresh sender context generates fresh ephemeral keys and an AEAD nonce.
+    const {enc, ct} = await cipher.seal({recipientPublicKey, info:keyInfo()}, payload);
+    const envelope = new Uint8Array(8 + enc.byteLength + ct.byteLength);
+    envelope.set(keyIdBytes());
+    envelope.set(new Uint8Array(enc), 8);
+    envelope.set(new Uint8Array(ct), 73);
+    return {
+      link: BASE + '#e1=' + toBase64url(envelope),
+      plainLength: BASE.length + 4 + Math.ceil((bytes.length + ENVELOPE_OVERHEAD) * 4 / 3)
+    };
+  }
+
+  function receiverKey() {
+    // Only the hosted viewer receives this constant during deployment.
+    // Public source and downloadable generator keep it null.
+    if (!RECEIVER) throw Error('이 HTML은 링크 생성용이에요. 공유 링크를 웹페이지에서 열어 주세요.');
+    if (RECEIVER.kid !== RECIPIENT.kid || RECEIVER.jwk?.kty !== 'EC' || RECEIVER.jwk.crv !== 'P-256' ||
+        RECEIVER.jwk.x !== RECIPIENT.jwk.x || RECEIVER.jwk.y !== RECIPIENT.jwk.y ||
+        !/^[A-Za-z0-9_-]{43}$/.test(RECEIVER.jwk.d)) {
+      throw Error('페이지를 읽을 수 없어요. 다시 열어 주세요.');
+    }
+    return RECEIVER.jwk;
+  }
+
+  async function decode(hash) {
+    if (hash.length > MAX_HASH_LENGTH) throw Error('링크가 너무 길어요.');
+    const match = /^#(e1|t|z)=([A-Za-z0-9_-]+)$/.exec(hash);
+    if (!match) throw Error('링크를 확인해 주세요.');
+    let bytes;
+    try {
+      bytes = fromBase64url(match[2]);
+      if (match[1] === 'e1') {
+        if (bytes.length <= ENVELOPE_OVERHEAD || !keyIdBytes().every((value, i) => value === bytes[i])) throw Error('Invalid envelope');
+      }
+    } catch { throw Error('링크를 읽을 수 없어요. 전체 주소인지 확인해 주세요.'); }
+    if (match[1] === 'e1') {
+      const cipher = suite();
+      const jwk = receiverKey();
+      try {
+        const recipientKey = await cipher.kem.importKey('jwk', jwk, false);
+        const payload = new Uint8Array(await cipher.open({
+          recipientKey, enc:bytes.slice(8, 73), info:keyInfo()
+        }, bytes.slice(73)));
+        if (payload[0] !== 0 && payload[0] !== 1) throw Error('Invalid mode');
+        bytes = payload[0] === 1 ? decompress(payload.subarray(1)) : payload.subarray(1);
+        const text = decoder.decode(bytes);
+        textBytes(text);
+        return text;
+      } catch { throw Error('링크를 읽을 수 없어요. 전체 주소인지 확인해 주세요.'); }
+    }
+    try {
+      const text = decoder.decode(match[1] === 'z' ? decompress(bytes) : bytes);
+      textBytes(text);
+      return text;
+    } catch { throw Error('링크를 읽을 수 없어요. 전체 주소인지 확인해 주세요.'); }
+  }
+
+  async function render() {
+    const revision = ++renderRevision;
+    const hash = location.hash;
+    received = '';
+    el('received').textContent = '';
+    el('copy-status').textContent = '';
+    el('composer').hidden = !!hash;
+    el('viewer').hidden = true;
+    el('invalid').hidden = true;
+    el('loading').hidden = true;
+    el('legacy-note').hidden = true;
+    if (!hash) return;
+    el('loading').hidden = false;
+    try {
+      if (new URLSearchParams(hash.slice(1)).has('text')) {
+        throw Error('이전 앱용 링크입니다. 텍스트로 새 링크를 만들어 주세요.');
+      }
+      const text = await decode(hash);
+      if (revision !== renderRevision || hash !== location.hash) return;
+      received = text;
+      el('received').textContent = received;
+      el('viewer').hidden = false;
+      el('legacy-note').hidden = hash.startsWith('#e1=');
+    } catch (error) {
+      if (revision !== renderRevision || hash !== location.hash) return;
+      el('invalid-message').textContent = error.message;
+      el('invalid').hidden = false;
+    } finally {
+      if (revision === renderRevision) el('loading').hidden = true;
+    }
+  }
+
+  el('text').addEventListener('input', () => {
+    ++inputRevision;
+    el('make-link').disabled = false;
+    el('result').hidden = true;
+    el('link').value = '';
+    el('link-size').textContent = '';
+    el('length-note').hidden = true;
+    el('preview').removeAttribute('href');
+    el('form-error').hidden = true;
+    el('copy-status').textContent = '';
+  });
+
+  el('form').addEventListener('submit', async event => {
+    event.preventDefault();
+    const revision = ++inputRevision;
+    el('make-link').disabled = true;
+    el('result').hidden = true;
+    el('form-error').hidden = true;
+    try {
+      const {link, plainLength} = await encode(el('text').value);
+      if (revision !== inputRevision) return;
+      el('link').value = link;
+      el('preview').href = link;
+      const saved = Math.floor((1 - link.length / plainLength) * 100);
+      el('link-size').textContent = `링크 ${link.length.toLocaleString('ko-KR')}자` + (saved > 0 ? ` · ${saved}% 감소` : '');
+      // A caution threshold, not a guarantee of any messenger's limit.
+      el('length-note').hidden = link.length <= 2000;
+      el('result').hidden = false;
+    } catch (error) {
+      if (revision !== inputRevision) return;
+      el('result').hidden = true;
+      el('form-error').textContent = error.message;
+      el('form-error').hidden = false;
+    } finally {
+      if (revision === inputRevision) el('make-link').disabled = false;
+    }
+  });
+
+  async function copy(text) {
+    clearTimeout(noticeTimer);
+    try {
+      try { await navigator.clipboard.writeText(text); }
+      catch {
+        const field = document.createElement('textarea');
+        field.value = text;
+        field.style.position = 'fixed';
+        field.style.opacity = '0';
+        document.body.append(field);
+        field.focus();field.select();
+        try { if (!document.execCommand('copy')) throw Error('Copy failed'); }
+        finally { field.remove(); }
+      }
+      el('copy-status').textContent = '복사했어요.';
+      noticeTimer = setTimeout(() => {el('copy-status').textContent = '';}, 1800);
+    } catch { el('copy-status').textContent = '복사하지 못했어요. 텍스트를 선택해 복사해 주세요.'; }
+  }
+
+  el('copy-link').addEventListener('click', () => copy(el('link').value));
+  el('copy-text').addEventListener('click', () => copy(received));
+  window.addEventListener('hashchange', render);
+  // Re-render on history restoration so the visible text matches the fragment.
+  window.addEventListener('pagehide', () => {
+    ++renderRevision;
+    received = '';
+    el('received').textContent = '';
+    el('viewer').hidden = true;
+  });
+  window.addEventListener('pageshow', event => { if (event.persisted) render(); });
+  render();
+})();
+</script>
+</body>
+</html>
