@@ -24,7 +24,7 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
-      - name: Prepare viewer with embedded key and public-only generator
+      - name: Prepare pages and legacy link compatibility
         env:
           COPYTOURL_RECEIVER_KEY: ${{ secrets.COPYTOURL_RECEIVER_KEY }}
         run: node prepare-pages.mjs

@@ -1,8 +1,8 @@
 import {readFile, writeFile, mkdir, rm} from 'node:fs/promises';
 import {createPrivateKey, createPublicKey, createHash} from 'node:crypto';
 
-// Runs in the public deployment repository. Git contains only public artifacts.
-// COPYTOURL_RECEIVER_KEY comes from Actions Secrets, never a committed file.
+// The optional decoder key is retained only for previously shared e1 links.
+// New compressed links and the downloadable HTML do not need it.
 try {
   const config = JSON.parse(process.env.COPYTOURL_RECEIVER_KEY ?? '');
   const privateKey = createPrivateKey({format:'jwk', key:config.jwk});
@@ -10,7 +10,7 @@ try {
   const raw = Buffer.concat([Buffer.from([4]), Buffer.from(jwk.x, 'base64url'), Buffer.from(jwk.y, 'base64url')]);
   const kid = createHash('sha256').update(raw).digest('hex').slice(0, 16);
   if (config.kid !== kid || jwk.kty !== 'EC' || jwk.crv !== 'P-256') throw Error();
-  const paths = ['index.html', 'copytourl/index.html', 'copytourl/create/index.html', 'copytourl/copytourl.html'];
+  const paths = ['index.html', 'create/index.html', 'copytourl.html', 'copytourl/index.html', 'copytourl/create/index.html', 'copytourl/copytourl.html'];
   const viewerPaths = new Set(['index.html', 'copytourl/index.html']);
   const receiverMarker = 'const RECEIVER = /* receiver-key */ null;';
   const receiver = JSON.stringify({kid, jwk:privateKey.export({format:'jwk'})}).replace(/</g, '\\u003c');
@@ -34,7 +34,7 @@ try {
   }
   await writeFile('_site/.nojekyll', '');
   await writeFile('_site/robots.txt', 'User-agent: *\nDisallow: /\n');
-  console.log('Pages 파일 준비 완료. 웹 열람 페이지에만 복호화 키를 포함했습니다.');
+  console.log('Pages 파일 준비 완료. 이전 링크 호환 설정을 웹 열람 페이지에 적용했습니다.');
 } catch {
   // Never log exception objects or input that could contain secret key material.
   console.error('배포 키와 공개 HTML을 확인해 주세요. 배포 파일을 만들지 못했습니다.');
